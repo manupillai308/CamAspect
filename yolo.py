@@ -5,6 +5,7 @@ import numpy as np
 from deep_sort_app import *
 from facerecog import *
 from multiprocessing import Process, Queue, Lock, set_start_method
+import sys
 
 def boxes_to_corners(box_xy, box_wh):
 	box_mins = box_xy - (box_wh / 2.)
@@ -157,8 +158,10 @@ if __name__ == '__main__':
 	set_start_method('spawn')
 	#cam = cv2.VideoCapture('./videos/input3.mp4')
 	cam = cv2.VideoCapture(0)
+	fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 	source_h = cam.get(cv2.CAP_PROP_FRAME_HEIGHT)
 	source_w = cam.get(cv2.CAP_PROP_FRAME_WIDTH)
+	writer = cv2.VideoWriter('output.mp4', fourcc, 10.0, (640, 480))
 	
 	graph1 = tf.Graph()
 	graph2 = tf.Graph()
@@ -167,7 +170,7 @@ if __name__ == '__main__':
 		model = YOLO(input_shape=(source_h, source_w, 3))
 		model.init()
 	with graph2.as_default():
-		encoder = create_box_encoder()
+		encoder, image_encoder = create_box_encoder()
 	frame_callback = TrackOp()
 	frame_no = 1
 	process_running = Lock()
@@ -200,6 +203,7 @@ if __name__ == '__main__':
 								frame_callback.tracker.tracks[i].face_image = face_image
 					draw_trackers(frame, frame_callback.tracker.tracks)
 				cv2.imshow('Frame', frame)
+				writer.write(frame)
 				if cv2.waitKey(1) == ord('q') & 0xFF:
 					break
 			else:
@@ -207,7 +211,10 @@ if __name__ == '__main__':
 	finally:
 		cv2.destroyAllWindows()
 		cam.release()
+		writer.release()
+		image_encoder.close()
 		model.close()
+		sys.exit(0)
 
 
 

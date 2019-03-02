@@ -1,3 +1,7 @@
+import datetime
+from deep_sort.firebase.pyfire import *
+from multiprocessing import Process
+
 class TrackState:
 
 	Tentative = 1
@@ -26,6 +30,9 @@ class Track:
 		
 		self.face_image = None
 		self.name = None
+		self.first_seen = datetime.datetime.strftime(datetime.datetime.now(), "%H:%M [%d-%m-%y]")
+		self.last_seen = None
+		
 
 	def to_tlwh(self):
 		ret = self.mean[:4].copy()
@@ -56,7 +63,12 @@ class Track:
 		if self.state == TrackState.Tentative:
 			self.state = TrackState.Deleted
 		elif self.time_since_update > self._max_age:
+			self.last_seen = datetime.datetime.strftime(datetime.datetime.now(), "%H:%M [%d-%m-%y]")
 			self.state = TrackState.Deleted
+			if self.name is not None:
+				p = Process(target=put_data, args=(self.name, self.first_seen, self.last_seen))
+				p.start()
+			
 
 	def is_tentative(self):
 		return self.state == TrackState.Tentative

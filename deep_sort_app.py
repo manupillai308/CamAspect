@@ -30,15 +30,16 @@ def rectangle(image, x, y, w, h, color, face_image, thickness, label):
 		face_image = cv2.resize(face_image, face_size)
 		try:
 			image[pt1[1]:min(pt2[1], pt1[1]+face_image.shape[0]), pt1[0]:min(pt2[0], face_image.shape[1]+pt1[0]), :] = face_image
+			pt1 = (pt1[0], pt1[1]+face_image.shape[0])
 		except:
 			pass
 	center = pt1[0] + 5, pt1[1] + 5 + text_size[0][1]
 	pt2 = pt1[0] + 10 + text_size[0][0], pt1[1] + 10 + text_size[0][1]
-	cv2.rectangle(image, pt1, pt2, (0,0,0), -1)
+	cv2.rectangle(image, pt1, pt2, color, -1)
 	cv2.putText(image, label, center, cv2.FONT_HERSHEY_PLAIN,
 				1, (255, 255, 255), thickness)
 
-def draw_trackers(image, tracks):
+def draw_trackers(image, tracks, text):
 	thickness = 2
 	for track in tracks:
 		if not track.is_confirmed() or track.time_since_update > 0:
@@ -46,6 +47,11 @@ def draw_trackers(image, tracks):
 		color = create_unique_color_uchar(track.track_id)
 		label = track.name if track.name is not None else "Unknown"
 		face_image = track.face_image
+		if text != "---all---":
+			if label == text:
+				pass
+			else:
+				continue
 		rectangle(image, 
 			*track.to_tlwh().astype(np.int), color, face_image, thickness, label=label)
 	
@@ -61,7 +67,7 @@ def create_detections(detection_mat, min_height=0):
 	return detection_list
 
 class TrackOp:
-	def __init__(self, min_confidence = 0.6, nms_max_overlap = 1.0, min_detection_height = 0, max_cosine_distance = 0.2,
+	def __init__(self, min_confidence = 0.5, nms_max_overlap = 1.0, min_detection_height = 0, max_cosine_distance = 0.2,
 	nn_budget = None):		
 		self.min_confidence = min_confidence
 		self.nms_max_overlap = nms_max_overlap

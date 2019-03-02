@@ -70,6 +70,9 @@ class ImageEncoder(object):
 			lambda x: self.session.run(self.output_var, feed_dict=x),
 			{self.input_var: data_x}, out, batch_size)
 		return out
+		
+	def close(self):
+		self.session.close()
 
 
 def create_box_encoder(batch_size=32):
@@ -84,7 +87,7 @@ def create_box_encoder(batch_size=32):
 		image_patches = np.asarray(image_patches)
 		return image_encoder(image_patches, batch_size)
 
-	return encoder
+	return encoder, image_encoder
 
 
 def generate_detections(encoder, image, detection_in):
