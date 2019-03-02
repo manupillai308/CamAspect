@@ -3,6 +3,8 @@ import cv2
 from features import *
 import numpy as np
 from deep_sort_app import *
+from facerecog import *
+from multiprocessing import Process, Queue, Lock, set_start_method
 
 def boxes_to_corners(box_xy, box_wh):
 	box_mins = box_xy - (box_wh / 2.)
@@ -152,7 +154,9 @@ class YOLO():
 		return np.asarray(objects)
 
 if __name__ == '__main__':
-	cam = cv2.VideoCapture('test1.avi')
+	set_start_method('spawn')
+	#cam = cv2.VideoCapture('./videos/input3.mp4')
+	cam = cv2.VideoCapture(0)
 	source_h = cam.get(cv2.CAP_PROP_FRAME_HEIGHT)
 	source_w = cam.get(cv2.CAP_PROP_FRAME_WIDTH)
 	
@@ -166,6 +170,8 @@ if __name__ == '__main__':
 		encoder = create_box_encoder()
 	frame_callback = TrackOp()
 	frame_no = 1
+	process_running = Lock()
+	q = Queue()
 	try:
 		while True:
 			ret, frame = cam.read()
@@ -175,6 +181,24 @@ if __name__ == '__main__':
 				if len(predictions) != 0:
 					detections_out = generate_detections(encoder, frame, predictions)
 					frame_callback(frame, detections_out)
+					if process_running.acquire(block=False):
+						tracks = {}
+						for track in frame_callback.tracker.tracks:
+							if track.name == None and track.is_confirmed():
+								tracks[track.track_id] = track.to_tlwh().astype(np.int)
+						if len(tracks.keys()) > 0:
+							p = Process(target=facerecog, args=(frame, tracks, q, process_running))
+							p.start()
+						process_running.release()
+					if not q.empty():
+						result = q.get(block=False)
+						id_keys = result.keys()
+						for i in range(len(frame_callback.tracker.tracks)):
+							if frame_callback.tracker.tracks[i].track_id in id_keys:
+								face_image, name = result[frame_callback.tracker.tracks[i].track_id]
+								frame_callback.tracker.tracks[i].name = name
+								frame_callback.tracker.tracks[i].face_image = face_image
+					draw_trackers(frame, frame_callback.tracker.tracks)
 				cv2.imshow('Frame', frame)
 				if cv2.waitKey(1) == ord('q') & 0xFF:
 					break

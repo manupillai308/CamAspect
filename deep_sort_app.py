@@ -1,8 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
-import argparse
 import os
-
 import cv2
 import numpy as np
 import colorsys
@@ -23,16 +19,22 @@ def create_unique_color_uchar(tag, hue_step=0.41):
     r, g, b = create_unique_color_float(tag, hue_step)
     return int(255*r), int(255*g), int(255*b)
 
-def rectangle(image, x, y, w, h, color, thickness, label):
+def rectangle(image, x, y, w, h, color, face_image, thickness, label):
 	pt1 = int(x), int(y)
 	pt2 = int(x + w), int(y + h)
 	cv2.rectangle(image, pt1, pt2, color, thickness)
 	text_size = cv2.getTextSize(
 		label, cv2.FONT_HERSHEY_PLAIN, 1, thickness)
-
+	if face_image is not None:
+		face_size = (int((5.4/6)*(h/4)), w//4)
+		face_image = cv2.resize(face_image, face_size)
+		try:
+			image[pt1[1]:min(pt2[1], pt1[1]+face_image.shape[0]), pt1[0]:min(pt2[0], face_image.shape[1]+pt1[0]), :] = face_image
+		except:
+			pass
 	center = pt1[0] + 5, pt1[1] + 5 + text_size[0][1]
 	pt2 = pt1[0] + 10 + text_size[0][0], pt1[1] + 10 + text_size[0][1]
-	cv2.rectangle(image, pt1, pt2, color, -1)
+	cv2.rectangle(image, pt1, pt2, (0,0,0), -1)
 	cv2.putText(image, label, center, cv2.FONT_HERSHEY_PLAIN,
 				1, (255, 255, 255), thickness)
 
@@ -42,8 +44,10 @@ def draw_trackers(image, tracks):
 		if not track.is_confirmed() or track.time_since_update > 0:
 			continue
 		color = create_unique_color_uchar(track.track_id)
+		label = track.name if track.name is not None else "Unknown"
+		face_image = track.face_image
 		rectangle(image, 
-			*track.to_tlwh().astype(np.int), color, thickness, label=str(track.track_id))
+			*track.to_tlwh().astype(np.int), color, face_image, thickness, label=label)
 	
 	return image
 
@@ -56,9 +60,8 @@ def create_detections(detection_mat, min_height=0):
 		detection_list.append(Detection(bbox, confidence, feature))
 	return detection_list
 
-
 class TrackOp:
-	def __init__(self, min_confidence = 0.8, nms_max_overlap = 1.0, min_detection_height = 0, max_cosine_distance = 0.2,
+	def __init__(self, min_confidence = 0.6, nms_max_overlap = 1.0, min_detection_height = 0, max_cosine_distance = 0.2,
 	nn_budget = None):		
 		self.min_confidence = min_confidence
 		self.nms_max_overlap = nms_max_overlap
@@ -82,6 +85,4 @@ class TrackOp:
 
 		self.tracker.predict()
 		self.tracker.update(detections)
-
-		draw_trackers(image, self.tracker.tracks)
 #
