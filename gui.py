@@ -165,7 +165,7 @@ class YOLO():
 class ControlWindow(QtGui.QWidget):
 	def __init__(self,parent=None, val=0):
 		super(ControlWindow, self).__init__(parent)
-		self.setWindowTitle('TrackingGUI')
+		self.setWindowTitle('Cam Aspect')
 		self.setGeometry(0,0,1000,750)
 		self.fps = 30
 		self.count=0
@@ -190,9 +190,10 @@ class ControlWindow(QtGui.QWidget):
 		self.process_running = Lock()
 		self.q = Queue()
 		self.video_frame = QtGui.QLabel()
-		imgg = QtGui.QImage('himani.jpg') ## logo
+		imgg = QtGui.QImage('./logo/logo.png') ## logo
 		pix = QtGui.QPixmap.fromImage(imgg)
-		self.video_frame.setPixmap(pix)
+		pix2 = pix.scaled(650,600,QtCore.Qt.KeepAspectRatio)
+		self.video_frame.setPixmap(pix2)
 		
 		
 		self.centralwidget=QtGui.QWidget(self)
@@ -200,21 +201,25 @@ class ControlWindow(QtGui.QWidget):
 		self.start_button = QtGui.QPushButton('START')
 		self.start_button.clicked.connect(self.start_application)
 		self.start_button.resize(self.start_button.minimumSizeHint())
-		self.start_button.setStyleSheet("height:30px")
+		self.start_button.setStyleSheet("height:30px; margin:20px" )
 	   
 
 		self.stop_button = QtGui.QPushButton('PAUSE')
 		self.stop_button.clicked.connect(self.stop_application)
-		self.stop_button.setStyleSheet("height:30px")
+		self.stop_button.setStyleSheet("height:30px; margin:20px")
 
 		self.quit_button=QtGui.QPushButton('QUIT')
 		self.quit_button.clicked.connect(self.close_application)
 	
-		self.quit_button.setStyleSheet("height:30px")
+		self.quit_button.setStyleSheet("height:30px; margin:20px")
 	
 
 
 		self.comboBox = QtGui.QComboBox()
+		self.comboBox.setStyleSheet("height:30px")
+		font = self.comboBox.font()
+		font.setPointSize(20)
+		self.comboBox.setFont(font)
 		self.s1 = QSlider(Qt.Horizontal)
 		self.s1.setMinimum(30)
 		self.s1.setMaximum(100)
@@ -222,17 +227,13 @@ class ControlWindow(QtGui.QWidget):
 		self.s1.valueChanged.connect(self.valuechange)
 
 		self.s2 = QSlider(Qt.Horizontal)
-		self.s2.setMinimum(0)
-		self.s2.setMaximum(1)
-		self.s2.setValue(0.5)
+		self.s2.setMinimum(30)
+		self.s2.setMaximum(100)
+		self.s2.setValue(50)
 		self.s2.valueChanged.connect(self.valuechange2)
 
-
-
-
-
 		self.verticalayoutWidget=QtGui.QWidget(self.centralwidget)
-		self.verticalayoutWidget.setGeometry(QtCore.QRect(50,20,850,600))
+		self.verticalayoutWidget.setGeometry(QtCore.QRect(0,0,680,700))
 
 		self.vbox=QtGui.QVBoxLayout(self.verticalayoutWidget)
 
@@ -241,17 +242,28 @@ class ControlWindow(QtGui.QWidget):
 
 
 		self.verticalayoutWidget_2=QtGui.QWidget(self.centralwidget)
-		self.verticalayoutWidget_2.setGeometry(QtCore.QRect(800,100,160,351))
+		self.verticalayoutWidget_2.setGeometry(QtCore.QRect(690,200,230,300))
 
 		self.vbox2=QtGui.QVBoxLayout(self.verticalayoutWidget_2)
 
+		self.label1 = QLabel()
+		self.label2 = QLabel()
+		self.label3 = QLabel()
+		
+		self.label1.setText("Select Person:-")
+		self.label2.setText("Adjust memory limit (frames):-")
+		self.label3.setText("Adjust min confidence:-")
+		
+		self.vbox2.addWidget(self.label1)
 		self.vbox2.addWidget(self.comboBox)
+		self.vbox2.addWidget(self.label2)
 		self.vbox2.addWidget(self.s1)
+		self.vbox2.addWidget(self.label3)
 		self.vbox2.addWidget(self.s2)
 
 
 		self.horizontalayoutWidget=QtGui.QWidget(self.centralwidget)
-		self.horizontalayoutWidget.setGeometry(QtCore.QRect(50,580,661,91))
+		self.horizontalayoutWidget.setGeometry(QtCore.QRect(0,600,680,91))
 
 		self.hbox=QtGui.QHBoxLayout(self.horizontalayoutWidget)
 		self.hbox.addWidget(self.start_button)
@@ -260,10 +272,10 @@ class ControlWindow(QtGui.QWidget):
 		self.show()
 
 	def valuechange(self):
-		size = self.s1.value()
+		self.frame_callback.tracker.max_age = self.s1.value()
 
 	def valuechange2(self):
-		size2=self.s2.value()
+		self.frame_callback.min_confidence = self.s2.value()/ 100.0
 
 	def dropdown(self):
 		self.comboBox.clear()
@@ -273,8 +285,6 @@ class ControlWindow(QtGui.QWidget):
 
 	def style_choice(self,text):
 		self.text = text
-
-
 
 	def setFPS(self, fps):
 		self.fps = fps
@@ -290,14 +300,14 @@ class ControlWindow(QtGui.QWidget):
 				if self.process_running.acquire(block=False):
 					tracks = {}
 					for track in self.frame_callback.tracker.tracks:
-						if track.name == None and track.is_confirmed():
+						if track.name is None and track.is_confirmed():
 							tracks[track.track_id] = track.to_tlwh().astype(np.int)
 					if len(tracks.keys()) > 0:
 						p = Process(target=facerecog, args=(frame, tracks, self.q, self.process_running))
 						p.start()
 					self.process_running.release()
 				if not self.q.empty():
-					result = self.q.get(block=False)
+					result = self.q.get()
 					id_keys = result.keys()
 					self.detected.clear()
 					self.detected.append("---all---")
@@ -338,7 +348,7 @@ class ControlWindow(QtGui.QWidget):
 		self.stop()
 
 	def close_application(self):
-		choice=QtGui.QMessageBox.question(self,'choose','Do you want to exit?',QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
+		choice=QtGui.QMessageBox.question(self,'Are you sure?','Do you want to exit?',QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
 		if choice==QtGui.QMessageBox.Yes:
 			cv2.destroyAllWindows()
 			self.cap.release()
