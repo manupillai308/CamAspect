@@ -37,6 +37,8 @@ pip install -r requirements.txt
 
 ## Usage
 
+The model files and some ommited google api keys are not present in this repository to limit usage of the package. For access, kindly contact one of the contributors.
+
 For Linux Systems :
 ```python3 gui.py``` (for GUI version)
 ```python3 yolo.py``` (for non-GUI version)
