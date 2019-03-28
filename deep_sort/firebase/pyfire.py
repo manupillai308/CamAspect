@@ -1,24 +1,7 @@
 import pyrebase
 import glob
 
-config = {
-	"apiKey": "AIzaSyAxm000LOCAVudGYDQsdPtqR2OHFfMHYZU",
-	"authDomain": "fir-search-e9674.firebaseapp.com",
-	"databaseURL": "https://fir-search-e9674.firebaseio.com",
-	"projectId": "fir-search-e9674",
-	"storageBucket": "fir-search-e9674.appspot.com",
-	"messagingSenderId": "45962151411"
-  }
-
-
-firebase = pyrebase.initialize_app(config)
-
-
-auth = firebase.auth()
-
-email="admin@gmail.com"
-password = "123qwerty"
-
+# CODE OMMITTED
 
 user = auth.sign_in_with_email_and_password(email, password)
 
