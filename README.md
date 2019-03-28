@@ -1,5 +1,10 @@
 # CamAspect
 A Smart Security Surveillance System
+
+
+[![demo](https://img.youtube.com/vi/ExkxAMdyxYo/0.jpg)](https://www.youtube.com/watch?v=ExkxAMdyxYo)
+[![demo](https://img.youtube.com/vi/NZqtjUsRjlc/0.jpg)](https://www.youtube.com/watch?v=NZqtjUsRjlc)
+
   ## A centralized system for human identification and tracking.
 Person detection and tracking is one of the most important research field that has gained a lot of attention in recent years. There are lot of  surveillance cctv cameras installed around us thus, it is necessary to develop a computer vision based technology that automatically processes the real time video frames in order to track the person.
 Here, we aim to build an intelligent system which has its own secure database system, a cctv network and a network of connected nodes(systems). Each node will be connected to the centralized system. Node will be used by authorized personnel with their login credentials for their authorized operations in the system(searching,tagging,etc)
@@ -14,7 +19,7 @@ The algorithm will detect humans in the cctv footage frames and will search the 
 CCTV surveillance system provides the real-time recording as well as online access by the staff to  monitor  more intelligently that would eventually reduce the risk of crime.
  CCTV surveillance system provides the real-time recording as well as online access by the staff to  monitor  more intelligently that would eventually reduce the risk of crime.
   ## WORKFLOW 
-  ![WORK FLOW](/demo/Screenshot.png)
+  ![WORK FLOW](/Screenshot.png)
   
 ### Prerequisites
 
@@ -42,10 +47,10 @@ For Windows Systems :
 
 ## Built With
 
-* [Tensorflow]() - The DL framework used
-* [Python]() - Language used
-* [PyQt]() - Used for producing GUI
-* [Opencv]() - Used for video aquisition
+* [Tensorflow](https://www.tensorflow.org/) - The DL framework used
+* [Python](https://www.python.org/) - Language used
+* [PyQt](https://riverbankcomputing.com/software/pyqt/intro) - Used for producing GUI
+* [Opencv](https://opencv.org/) - Used for video aquisition
 
 ## License
 
